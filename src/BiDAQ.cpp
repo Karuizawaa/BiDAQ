@@ -29,10 +29,13 @@ class drDC{
 	}
 
 	/* Send UDP */
-	void cps(int soket, std::string pesan){
+	void send(int soket, std::string pesan){
 		sendto(soket, pesan.c_str(), strlen(pesan.c_str()),
 			MSG_CONFIRM, (const struct sockaddr *) &alamat,
 				len);
+	}
+	void drive(int cps){
+		send(sockfd, std::to_string(cps));
 	}
 	/* Receive UDP */
 	void receive(int soket){
@@ -51,12 +54,13 @@ class drDC{
         enc = atoi(terima);
 	}
     operator long int (){
+		receive(sockfd);
         return(atoi(terima));
     }
 
 };
 
-class BiDAQ{
+class DAQ{
 	public:
 	struct sockaddr_in alamat, cli_addr;
 	// struct timeval t1, t2;
@@ -74,11 +78,11 @@ class BiDAQ{
 	std::chrono::steady_clock::time_point begin;
 	std::chrono::steady_clock::time_point end;
 
-	BiDAQ(char *IP, unsigned long port){
+	DAQ(char *IP, unsigned long port){
 		memset(&alamat, 0, sizeof(alamat));
 		memset(&cli_addr, 0, sizeof(cli_addr));
 		deviceIP = IP;
-		BiDAQ::alamat.sin_family = AF_INET;
+		DAQ::alamat.sin_family = AF_INET;
 		inet_pton(AF_INET, IP, &alamat.sin_addr.s_addr);
 		alamat.sin_port = htons(port);
 		len = sizeof(alamat);
