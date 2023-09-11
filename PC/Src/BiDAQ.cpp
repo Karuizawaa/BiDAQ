@@ -100,7 +100,6 @@ class DAQ{
 			sizeReceive = recvfrom(soket, (uint8_t *)dataINPUT, sizeof(dataINPUT),
 						0, ( struct sockaddr *) &cli_addr,
 						&sender_addr_len);
-			buffer[sizeReceive] = '\0';
 			senderIP = inet_ntoa(cli_addr.sin_addr);
 		}
 		while(senderIP != deviceIP);
