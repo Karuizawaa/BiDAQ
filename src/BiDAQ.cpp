@@ -64,14 +64,11 @@ class DAQ{
 	public:
 	struct sockaddr_in alamat, cli_addr;
 	// struct timeval t1, t2;
-	long long enc, lastenc, prevenc;
 	char buffer[MAXLINE];
-	char terima[MAXLINE];
-	char terimaSpesifik[MAXLINE];
-    char kirim[MAXLINE];
+	char terima[6];
+	uint16_t dataOUTPUT;
+	uint16_t dataINPUT;
 	int sizeReceive;
-	//lowpass
-	float vFilt, vPrev;
 
 	std::string deviceIP, senderIP;
 	socklen_t len;
@@ -88,10 +85,10 @@ class DAQ{
 		len = sizeof(alamat);
 		
 	}
-
-	/* Send UDP */
-	void send(int soket, std::string pesan){
-		sendto(soket, pesan.c_str(), strlen(pesan.c_str()),
+	
+	/* Send UDP */ //send 2 byte
+	void send(int soket, uint16_t pesan){
+		sendto(soket, (const uint16_t*)pesan, sizeof(pesan),
 			MSG_CONFIRM, (const struct sockaddr *) &alamat,
 				len);
 	}
@@ -100,26 +97,26 @@ class DAQ{
 		do{
 
 			socklen_t sender_addr_len = sizeof(cli_addr);
-			sizeReceive = recvfrom(soket, (char *)buffer, MAXLINE,
+			sizeReceive = recvfrom(soket, (uint8_t *)dataINPUT, sizeof(dataINPUT),
 						0, ( struct sockaddr *) &cli_addr,
 						&sender_addr_len);
 			buffer[sizeReceive] = '\0';
 			senderIP = inet_ntoa(cli_addr.sin_addr);
 		}
 		while(senderIP != deviceIP);
-
-		strncpy(terima, buffer, MAXLINE);
 	}
 
     bool digRead(uint8_t pin){
         receive(sockfd);
-        char buff[20];
-        if (pin != 0) buff[0] = terima[pin-1];
-        return(atoi(buff));
+		if(dataINPUT & (1<<pin-1)){
+			return 1;
+		}
+		else return 0;
     }
 
     void digWrite(uint8_t pin, bool STATE){
-        STATE == 0 ? kirim[pin-1] = '0' : kirim[pin-1] = '1';
+		STATE ? dataOUTPUT |= 1 << pin-1 : dataOUTPUT &= ~(1 << pin-1);
+		send(sockfd, dataOUTPUT);
     }
 };
 
