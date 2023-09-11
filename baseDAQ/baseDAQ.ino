@@ -12,7 +12,7 @@
 
 #define pinB3 8
 
-uint8_t input;
+uint16_t input;
 
 
 // INPUT
@@ -28,6 +28,9 @@ uint8_t pin_input[10] = {2, 46, 3, 44, 18, 42, 19, 41, 31, 33};
 #define IN9 31 
 #define IN10 33
 
+#define INMaxPin 16
+uint16_t dataInputPin;
+
 //OUT
 uint8_t pin_output[10] = {13,12,11,9,3,25,23,4,27,29};
 #define OUT1 13
@@ -41,6 +44,9 @@ uint8_t pin_output[10] = {13,12,11,9,3,25,23,4,27,29};
 #define OUT9  27
 #define OUT10 29
 
+#define OUTMaxPin 16
+uint16_t dataOutputPin;
+
 // replace the MAC address below by the MAC address printed on a sticker on the Arduino Shield 2
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
@@ -52,7 +58,8 @@ IPAddress myDns(8, 8, 8, 8);
 EthernetUDP Udp;
 
 unsigned int localPort = 8888;
-char packetBuffer[512];  // buffer to hold incoming packet,
+char packetBuffer[6];  // buffer to hold incoming packet,
+uint16_t terima;
 
 char headStr[20];
 
@@ -89,13 +96,18 @@ void loop() {
   if(int n = Udp.parsePacket()){
     Udp.read(packetBuffer,6);  // buffer to hold incoming packet,
     packetBuffer[n] = '\0';
-    for(uint8_t i=0; i <= 10; i++){
-      digitalWrite(pin_output[i], packetBuffer[i]);
+    uint16_t outputVal = (packetBuffer[1] << 8 | packetBuffer[2]);
+    for(uint8_t i=0; i <= OUTMaxPin; i++){
+      digitalWrite(pin_output[i], outputVal & (1<<i));
     }
   }
-  for(uint8_t i = 0; i <= 10; i++){
-    input = (digitalRead(pin_input[i]) << i);
+  for(uint8_t i = 0; i <= INMaxPin-1; i++){
+    if(digitalRead(pin_input) == 1){
+      input |= 1 << i;
+    }
+    else{
+      input &= ~(1 << i);
+    }
   }
   Udp.write(input);
-  
 }
