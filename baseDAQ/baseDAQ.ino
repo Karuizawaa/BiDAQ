@@ -10,11 +10,7 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
-#define pinB3 8
-
-
-
-// INPUT
+// INPUT DIGITAL
 uint8_t pin_input[16] = {31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 22, 24, 26, 28, 30, 32};
 //PullUP
 #define IN1 31
@@ -77,6 +73,7 @@ EthernetUDP Udp;
 
 unsigned int localPort = 8888;
 char packetBuffer[6];  // buffer to hold incoming packet,
+uint8_t terimaBuffer[6];
 uint16_t terima;
 
 char headStr[20];
@@ -120,15 +117,25 @@ void setup() {
 
   // initialize Udp communication on port
   Udp.begin(localPort);
+  Serial.begin(115200);
 }
 
 void loop() {
   if(int n = Udp.parsePacket()){
-    Udp.read(packetBuffer,6);  // buffer to hold incoming packet,
-    uint16_t outputVal = (packetBuffer[0] << 8 | packetBuffer[1]);
-    for(uint8_t i=0; i <= OUTMaxPin - 1; i++){
-      digitalWrite(pin_output[i], GetBit(outputVal, i));
+    Udp.read(terimaBuffer,6);  // buffer to hold incoming packet,
+    uint16_t outputVal = (packetBuffer[1] << 8 | packetBuffer[0]);
+    packetBuffer[n] = 0;
+//    for(uint8_t i=0; i <= OUTMaxPin - 1; i++){
+////      digitalWrite(pin_output[i], GetBit(outputVal, i));
+//      Serial.print(GetBit(outputVal, i));
+//    }
+    for(uint8_t i = 0 ; i < 8 ; i++){
+      Serial.print(GetBit(terimaBuffer[0], i));
     }
+    for(uint8_t i = 0 ; i < 8 ; i++){
+      Serial.print(GetBit(terimaBuffer[1], i));
+    }
+    Serial.println();
   }
   for(uint8_t i = 0; i <= INMaxPin-1; i++){
     if(digitalRead(pin_input[i]) == 1){
