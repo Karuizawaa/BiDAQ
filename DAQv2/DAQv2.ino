@@ -47,15 +47,15 @@ uint8_t pin_outputP[8] = {2, 3, 4, 5, 6, 7, 8, 9};
 #define OUTP8 9
 
 //OUTPUT DIGITAL
-uint8_t pin_outputD[8] = {2, 3, 4, 5, 6, 7, 8, 9};
-#define OUTD1 7
-#define OUTD2 8
-#define OUTD3 9
-#define OUTD4 11
-#define OUTD5 12
-#define OUTD6 13
-#define OUTD7 34
-#define OUTD8 36
+uint8_t pin_outputD[8] = {30, 32, 34, 36, 38, 40, 42, 44};
+#define OUTD1 30
+#define OUTD2 32
+#define OUTD3 34
+#define OUTD4 36
+#define OUTD5 38
+#define OUTD6 40
+#define OUTD7 42
+#define OUTD8 44
 
 #define GetBit(var, nbit) ((var & (1 << nbit)) != 0) // Returns true / false if bit is set
 #define ResetBit(var, nbit) (var &= ~(1 << nbit));
@@ -73,7 +73,6 @@ IPAddress myDns(8, 8, 8, 8);
 EthernetUDP Udp;
 
 unsigned int localPort = 8888;
-char packetBuffer[12];  // buffer to hold incoming packet,
 uint8_t terimaBuffer[12];
 
 char headStr[20];
@@ -128,11 +127,15 @@ void loop() {
   if(int n = Udp.parsePacket()){
     Udp.read(terimaBuffer,12);  // buffer to hold incoming packet,
     //BYTE PERTAMA DIGITAL OUTPUT, BYTE SELANJUTNYA PWM : 1 BYTE PERTAMA, 8 PIN DIGITALL, 8 BYTE SISA 8 PIN ANALOG
-    for(int i = 0; i < 8; i++){
+    for(uint8_t i = 0; i < 8; i++){
       digitalWrite(pin_outputD[i], GetBit(terimaBuffer[0], i));
+      Serial.print(GetBit(terimaBuffer[0], i));
     }
-    for(int i = 0; i < 8; i++){
+    Serial.print(" ");
+    for(uint8_t i = 0; i < 8; i++){
       analogWrite(pin_outputP[i], terimaBuffer[i+1]);
+      Serial.print(terimaBuffer[i+1]);
+      Serial.print(" ");
     }
     Serial.println();
   }

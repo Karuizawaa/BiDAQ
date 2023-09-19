@@ -123,17 +123,13 @@ void setup() {
 void loop() {
   if(int n = Udp.parsePacket()){
     Udp.read(terimaBuffer,6);  // buffer to hold incoming packet,
-    uint16_t outputVal = (packetBuffer[1] << 8 | packetBuffer[0]);
-    packetBuffer[n] = 0;
-//    for(uint8_t i=0; i <= OUTMaxPin - 1; i++){
-////      digitalWrite(pin_output[i], GetBit(outputVal, i));
-//      Serial.print(GetBit(outputVal, i));
-//    }
     for(uint8_t i = 0 ; i < 8 ; i++){
       Serial.print(GetBit(terimaBuffer[0], i));
+      digitalWrite(pin_output[i], GetBit(terimaBuffer[0], i));
     }
     for(uint8_t i = 0 ; i < 8 ; i++){
       Serial.print(GetBit(terimaBuffer[1], i));
+      digitalWrite(pin_output[i+8], GetBit(terimaBuffer[1], i));
     }
     Serial.println();
   }
