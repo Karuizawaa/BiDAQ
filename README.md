@@ -10,20 +10,31 @@ for DAQ product, declare your DAQ with DAQ class.
 e.x:
 
 DAQ myDAQ("192.168.0.99, 8888);
+
 DAQ myDAQ(urDAQ_IP, DAQPORT);
 
+to make digital output, use DAQ::digitalWrite() method
+e.x :
 
-for drDC product, declare your drDC with drDC class.
+myDAQ.digitalWrite(3, 1);
+
+*note
+3, is digital output pin number
+1, is state which is only contain 0 or 1
+
+to make PWM output, use DAQ::analogWrite() method
+e.x :
+
+myDAQ.analogWrite(2, 150);
+
+*note
+2, is analog output pin number
+150, is PWM value, which is only in range 0 to 255
+
+to get digital input value, use DAQ::digitalRead() method
 e.x:
 
-drDC motor1(drDC_IP, drDCPORT);
+myDAQ.digitalRead(3);
 
-DAQ made for read digital pulse and write digital pulse. this is how you can read digital pulse form the desired pin and write digital pulse to desired pin.
-
-myDAQ.digRead(PIN);     //read digital pulse from PIN
-
-myDAQ.digWrite(PIN);    //write digital pulse to PIN
-
-drDC made for controlling motor DC from PC. this product can give you the encoder value, and you can control the motor speed with encoder count / second;
-e.x:
-motor1.drive(CPS);      //drive motor with speed count per second
+*note
+3 is digital input pin number
