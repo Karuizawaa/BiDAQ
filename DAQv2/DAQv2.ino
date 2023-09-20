@@ -147,7 +147,7 @@ void loop() {
       ResetBit(dataInputPin, i);
     }
   }
-  Udp.beginPacket(IPAddress(192, 168, 0, 55), 5555);
+  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
   Udp.write(dataInputPin);  //Byte pertama info pin input digital
   for(uint8_t i = 0; i < 8 ; i++){
     uint16_t val = analogRead(pin_inputA[i]);

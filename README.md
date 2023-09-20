@@ -9,6 +9,7 @@ startUDP(5555);
 for DAQ product, declare your DAQ with DAQ class.
 e.x:
 
+DAQ myDAQ("192.168.0.99, 8888);
 DAQ myDAQ(urDAQ_IP, DAQPORT);
 
 

@@ -1,0 +1,2 @@
+Referensi rangkaian analog Input
+https://arduino.stackexchange.com/questions/45485/reading-4-to-20ma-pressure-sensor-using-uno
