@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <thread>
+#include <set>
 
 #define PORT	 8080
 #define MAXLINE 1024
@@ -43,8 +44,11 @@ struct sockaddr_in servaddr;
 
 class DAQ{
 	private:
-	std::thread* t;
+	static std::set<DAQ*> daqObjects;
 	public:
+
+	std::set<DAQ*> daqObjects;
+	static std::set<DAQ*>& daqSet();
 	struct sockaddr_in device_addr;
 	// struct timeval t1, t2;
 	
@@ -65,15 +69,10 @@ class DAQ{
 		inet_pton(AF_INET, IP, &device_addr.sin_addr.s_addr);
 		device_addr.sin_port = htons(port);
 		len = sizeof(device_addr);
-		daqDevices.emplace_back();
 	}
 	
-	/* Send UDP */ //send 2 byte
-	void update(){
-		while(1){
-			// std::this_thread::sleep_for(std::chrono::milliseconds(1));
-			send(sockfd, kirim);
-		}
+	static std::set<DAQ*>& daqSet(){
+		return daqObjects;
 	}
 	void send(int soket, const uint8_t *pesan){
 		sendto(soket, pesan, sizeof(pesan)+1,
@@ -141,21 +140,22 @@ void startUDP(int udpPort){
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
+	std::thread thread_listen(communicate, sockfd);
 }
 
-void receive(int soket){
+void communicate(int soket){
 	uint8_t buffer[12];
 	struct sockaddr_in sender_addr;
 	socklen_t sender_addr_len = sizeof(sender_addr);
-	size_t sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
-						0, ( struct sockaddr *) &sender_addr,
-						&sender_addr_len);
-	for(auto &wkwk : daqDevices){
-		if(sender_addr.sin_addr.s_addr == wkwk.device_addr.sin_addr.s_addr){
-			memcpy(wkwk.terima, buffer,sizeTerima);
-			break;
+	while(1){
+		size_t sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
+							0, ( struct sockaddr *) &sender_addr,
+							&sender_addr_len);
+		for(auto &wkwk : DAQ::daqSet()){
+			wkwk->send(soket, wkwk->kirim);
+			if(sender_addr.sin_addr.s_addr == wkwk->device_addr.sin_addr.s_addr){
+				memcpy(wkwk->terima, buffer,sizeTerima);
+			}			
 		}
 	}
 }
-
-
