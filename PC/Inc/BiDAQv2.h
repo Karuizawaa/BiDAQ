@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <chrono>
+#include <thread>
+
 #define PORT	 8080
 #define MAXLINE 1024
 
@@ -96,52 +99,63 @@ class drDC{
 	OUTPUT ANALOG 8 pin: pin 1 -8
 */
 class DAQ{
+	private:
+	std::thread* t;
 	public:
-	struct sockaddr_in alamat, cli_addr;
+	struct sockaddr_in device_addr;
 	// struct timeval t1, t2;
+	
 	uint8_t terima[12];
 	uint8_t kirim[12];
-	uint16_t dataOUTPUT;
-	uint16_t dataINPUT;
 	int sizeReceive;
 
-	std::string deviceIP, senderIP;
+	
+	
 	socklen_t len;
 	std::chrono::steady_clock::time_point begin;
 	std::chrono::steady_clock::time_point end;
 
 	DAQ(char *IP, unsigned long port){
-		memset(&alamat, 0, sizeof(alamat));
-		memset(&cli_addr, 0, sizeof(cli_addr));
-		deviceIP = IP;
-		DAQ::alamat.sin_family = AF_INET;
-		inet_pton(AF_INET, IP, &alamat.sin_addr.s_addr);
-		alamat.sin_port = htons(port);
-		len = sizeof(alamat);
+		memset(&device_addr, 0, sizeof(device_addr));
 		
+		DAQ::device_addr.sin_family = AF_INET;
+		inet_pton(AF_INET, IP, &device_addr.sin_addr.s_addr);
+		device_addr.sin_port = htons(port);
+		len = sizeof(device_addr);
+		t = new std::thread([this]() {update();} );
 	}
 	
 	/* Send UDP */ //send 2 byte
+	void update(){
+		while(1){
+			// std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			send(sockfd, kirim);
+			receive(sockfd);
+		}
+	}
 	void send(int soket, const uint8_t *pesan){
 		sendto(soket, pesan, sizeof(pesan)+1,
-			MSG_CONFIRM, (const struct sockaddr *) &alamat,
+			MSG_CONFIRM, (const struct sockaddr *) &device_addr,
 				len);
 	}
 	/* Receive UDP */
 	void receive(int soket){
-		do{
-
-			socklen_t sender_addr_len = sizeof(cli_addr);
-			sizeReceive = recvfrom(soket, (uint8_t *)terima, sizeof(terima),
-						0, ( struct sockaddr *) &cli_addr,
-						&sender_addr_len);
-			senderIP = inet_ntoa(cli_addr.sin_addr);
+		uint8_t buffer[12];
+		struct sockaddr_in sender_addr;
+		socklen_t sender_addr_len = sizeof(sender_addr);
+		sizeReceive = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
+					0, ( struct sockaddr *) &sender_addr,
+					&sender_addr_len);
+		while(1){
+			if(sender_addr.sin_addr.s_addr == device_addr.sin_addr.s_addr){
+				memcpy(terima, buffer, sizeof(buffer));
+				break;
+			}
 		}
-		while(senderIP != deviceIP);
 	}
 
     bool digitalRead(uint8_t pin){
-        receive(sockfd);
+        // receive(sockfd);
 		if(GetBit(DAQ::terima[0], pin-1)){
 			return 1;
 		}
@@ -149,18 +163,28 @@ class DAQ{
     }
 
 	uint8_t analogRead(uint8_t pin){
-		receive(sockfd);
+		// receive(sockfd);
 		return DAQ::terima[pin];
 	}
 
     void digitalWrite(uint8_t pin, bool STATE){
 		STATE ? SetBit(kirim[0], pin-1) : ResetBit(kirim[0], pin-1);
-		send(sockfd, kirim);
+		// send(sockfd, kirim);
     }
 
 	void analogWrite(uint8_t pin, uint8_t PWM){
 		kirim[pin] = PWM;
-		send(sockfd, kirim);
+		// send(sockfd, kirim);
+	}
+	void showBin(){
+		for(uint8_t i = 0; i < 8; i++){
+			printf("%d", GetBit(terima[0], i));
+		}
+		printf(" ");
+		for(uint8_t i = 0; i < 8; i++){
+			printf("%d ",terima[i+1]);
+		}
+		printf("\n");
 	}
 };
 
@@ -187,3 +211,4 @@ void startUDP(int udpPort){
 		exit(EXIT_FAILURE);
 	}
 }
+
