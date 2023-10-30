@@ -50,7 +50,7 @@ class DAQ{
 	
 	uint8_t terima[12];
 	uint8_t kirim[12];
-	int sizeReceive;
+	size_t sizeTerima;
 
 	
 	
@@ -81,7 +81,17 @@ class DAQ{
 				len);
 	}
 	/* Receive UDP */
-	
+	void receive(int soket){
+		uint8_t buffer[12];
+		struct sockaddr_in sender_addr;
+		socklen_t sender_addr_len = sizeof(sender_addr);
+		do{
+			sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
+								0, ( struct sockaddr *) &sender_addr,
+								&sender_addr_len);
+		}while(sender_addr.sin_addr.s_addr == device_addr.sin_addr.s_addr);
+		memcpy(terima,buffer,sizeTerima);
+	}
 
     bool digitalRead(uint8_t pin){
         // receive(sockfd);
@@ -143,19 +153,6 @@ void startUDP(int udpPort){
 	}
 }
 
-void receive(int soket){
-	uint8_t buffer[12];
-	struct sockaddr_in sender_addr;
-	socklen_t sender_addr_len = sizeof(sender_addr);
-	size_t sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
-						0, ( struct sockaddr *) &sender_addr,
-						&sender_addr_len);
-	for(auto &wkwk : daqDevices){
-		if(sender_addr.sin_addr.s_addr == wkwk.device_addr.sin_addr.s_addr){
-			memcpy(wkwk.terima, buffer,sizeTerima);
-			break;
-		}
-	}
-}
+
 
 
