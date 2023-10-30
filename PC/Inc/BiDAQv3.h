@@ -43,12 +43,9 @@ struct sockaddr_in servaddr;
 
 
 class DAQ{
-	private:
-	static std::set<DAQ*> daqObjects;
+	static std::set<DAQ*> DAQObj;
 	public:
-
-	std::set<DAQ*> daqObjects;
-	static std::set<DAQ*>& daqSet();
+	static std::set<DAQ*>& DAQSet();
 	struct sockaddr_in device_addr;
 	// struct timeval t1, t2;
 	
@@ -69,16 +66,15 @@ class DAQ{
 		inet_pton(AF_INET, IP, &device_addr.sin_addr.s_addr);
 		device_addr.sin_port = htons(port);
 		len = sizeof(device_addr);
-	}
-	
-	static std::set<DAQ*>& daqSet(){
-		return daqObjects;
+		// DAQs.push_back(this);
 	}
 	void send(int soket, const uint8_t *pesan){
 		sendto(soket, pesan, sizeof(pesan)+1,
 			MSG_CONFIRM, (const struct sockaddr *) &device_addr,
 				len);
 	}
+
+	
 	/* Receive UDP */
 	
 
@@ -116,7 +112,10 @@ class DAQ{
 	}
 };
 
-std::vector<DAQ> daqDevices;
+std::set<DAQ*> DAQ::DAQObj;
+std::set<DAQ*>& DAQ::DAQSet(){
+	return DAQObj;
+}
 
 void startUDP(int udpPort){
     // Creating socket file descriptor
@@ -140,7 +139,7 @@ void startUDP(int udpPort){
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
-	std::thread thread_listen(communicate, sockfd);
+	// std::thread thread_listen(communicate, sockfd);
 }
 
 void communicate(int soket){
@@ -151,7 +150,7 @@ void communicate(int soket){
 		size_t sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
 							0, ( struct sockaddr *) &sender_addr,
 							&sender_addr_len);
-		for(auto &wkwk : DAQ::daqSet()){
+		for(auto &wkwk : DAQ::DAQSet()){
 			wkwk->send(soket, wkwk->kirim);
 			if(sender_addr.sin_addr.s_addr == wkwk->device_addr.sin_addr.s_addr){
 				memcpy(wkwk->terima, buffer,sizeTerima);
