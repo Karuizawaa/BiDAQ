@@ -31,6 +31,10 @@
 int sockfd;
 struct sockaddr_in servaddr;
 
+uint8_t buffer[12];
+struct sockaddr_in sender_addr;
+socklen_t sender_addr_len = sizeof(sender_addr);
+size_t sizeTerima;
 
 /*
 	DAQ v2
@@ -43,17 +47,14 @@ struct sockaddr_in servaddr;
 
 
 class DAQ{
-	static std::set<DAQ*> DAQObj;
 	public:
-	static std::set<DAQ*>& DAQSet();
 	struct sockaddr_in device_addr;
 	// struct timeval t1, t2;
 	
 	uint8_t terima[12];
 	uint8_t kirim[12];
 	int sizeReceive;
-
-	
+	unsigned long penghubung;
 	
 	socklen_t len;
 	std::chrono::steady_clock::time_point begin;
@@ -61,11 +62,19 @@ class DAQ{
 
 	DAQ(char *IP, unsigned long port){
 		memset(&device_addr, 0, sizeof(device_addr));
-		
 		DAQ::device_addr.sin_family = AF_INET;
 		inet_pton(AF_INET, IP, &device_addr.sin_addr.s_addr);
 		device_addr.sin_port = htons(port);
 		len = sizeof(device_addr);
+		penghubung = port;
+		Register(this);
+	}
+
+	static DAQ* head;
+	DAQ* next;
+	static void Register(DAQ* obj){
+		obj->next = head;
+		head = obj;
 	}
 	void send(int soket, const uint8_t *pesan){
 		sendto(soket, pesan, sizeof(pesan)+1,
@@ -73,10 +82,22 @@ class DAQ{
 				len);
 	}
 
+	void update(){
+		// printf("%d\n",penghubung);
+		send(sockfd, kirim);
+		if(sender_addr.sin_addr.s_addr == this->device_addr.sin_addr.s_addr){
+			memcpy(terima, buffer, sizeTerima);
+		}
+	}
 	
+	static void callonAllobj(){
+		DAQ* current = head;
+		while(current){
+			current->update();
+			current = current->next;
+		}
+	}
 	/* Receive UDP */
-	
-
     bool digitalRead(uint8_t pin){
         // receive(sockfd);
 		if(GetBit(DAQ::terima[0], pin-1)){
@@ -99,7 +120,7 @@ class DAQ{
 		kirim[pin] = PWM;
 		// send(sockfd, kirim);
 	}
-	void showBin(){
+	void showBinInput(){
 		for(uint8_t i = 0; i < 8; i++){
 			printf("%d", GetBit(terima[0], i));
 		}
@@ -109,11 +130,27 @@ class DAQ{
 		}
 		printf("\n");
 	}
+	void showBinOutput(){
+		for(uint8_t i = 0; i < 8; i++){
+			printf("%d", GetBit(kirim[0], i));
+		}
+		printf(" ");
+		for(uint8_t i = 0; i < 8; i++){
+			printf("%d ",kirim[i+1]);
+		}
+		printf("\n");
+	}
 };
 
-std::set<DAQ*> DAQ::DAQObj;
-std::set<DAQ*>& DAQ::DAQSet(){
-	return DAQObj;
+DAQ* DAQ::head = nullptr;
+
+void communicate(int soket){
+	while(1){
+		sizeTerima =  recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
+						0, ( struct sockaddr *) &sender_addr,
+						&sender_addr_len);
+		DAQ::callonAllobj();
+	}
 }
 
 void startUDP(int udpPort){
@@ -122,10 +159,7 @@ void startUDP(int udpPort){
 		perror("socket creation failed");
 		exit(EXIT_FAILURE);
 	}
-	
 	memset(&servaddr, 0, sizeof(servaddr));
-
-
 	// Filling server information
 	servaddr.sin_family = AF_INET; // IPv4
 	servaddr.sin_addr.s_addr = INADDR_ANY;
@@ -141,19 +175,3 @@ void startUDP(int udpPort){
 	// std::thread thread_listen(communicate, sockfd);
 }
 
-void communicate(int soket){
-	uint8_t buffer[12];
-	struct sockaddr_in sender_addr;
-	socklen_t sender_addr_len = sizeof(sender_addr);
-	// while(1){
-		size_t sizeTerima = recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
-							0, ( struct sockaddr *) &sender_addr,
-							&sender_addr_len);
-		for(auto &wkwk : DAQ::DAQSet()){
-			wkwk->send(soket, wkwk->kirim);
-			if(sender_addr.sin_addr.s_addr == wkwk->device_addr.sin_addr.s_addr){
-				memcpy(wkwk->terima, buffer,sizeTerima);
-			}			
-		}
-	// }
-}

@@ -46,7 +46,6 @@ uint8_t pin_outputP[8] = {2, 3, 4, 5, 6, 7, 8, 9};
 #define OUTP7 8
 #define OUTP8 9
 
-//OUTPUT DIGITALAnda sedang offline. Periksa koneksi Anda.
 uint8_t pin_outputD[8] = {30, 32, 34, 36, 38, 40, 42, 44};
 #define OUTD1 30
 #define OUTD2 32
@@ -131,7 +130,7 @@ void loop() {
       digitalWrite(pin_outputD[i], GetBit(terimaBuffer[0], i));
 //      Serial.print(GetBit(terimaBuffer[0], i));
     }
-//    Serial.print(" ");
+    Serial.print(" ");
     for(uint8_t i = 0; i < 8; i++){
       analogWrite(pin_outputP[i], terimaBuffer[i+1]);
 //      Serial.print(terimaBuffer[i+1]);
@@ -141,12 +140,10 @@ void loop() {
   }
   for(uint8_t i = 0; i < 8; i++){
     digitalRead(pin_inputD[i]) == 1 ? SetBit(dataInputPin, i): ResetBit(dataInputPin, i);
-  }
-  for(uint8_t i = 0; i < 8; i++){
     Serial.print(GetBit(dataInputPin, i));
   }
   Serial.print(" ");
-  Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+  Udp.beginPacket(IPAddress(192,168,0,55), 5555);
   Udp.write(dataInputPin);  //Byte pertama info pin input digital
   for(uint8_t i = 0; i < 8 ; i++){
     uint16_t val = analogRead(pin_inputA[i]);
