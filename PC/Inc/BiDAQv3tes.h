@@ -145,12 +145,12 @@ class DAQ{
 DAQ* DAQ::head = nullptr;
 
 void communicate(int soket){
-	while(1){
+	// while(1){
 		sizeTerima =  recvfrom(soket, (uint8_t *)buffer, sizeof(buffer),
 						0, ( struct sockaddr *) &sender_addr,
 						&sender_addr_len);
 		DAQ::callonAllobj();
-	}
+	// }
 }
 
 void startUDP(int udpPort){
